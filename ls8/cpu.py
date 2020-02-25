@@ -7,7 +7,20 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
-        pass
+        # creates 8 registers
+        self.reg = [0] * 8
+
+        # creates 256 bytes of memory
+        self.ram = [0] * 256
+
+        # creates a program counter (pc)
+        self.pc = 0
+
+    def ram_read(self, addr: int):
+        return self.ram[addr]
+
+    def write_ram(self, addr: int, value):
+        self.ram[addr] = value
 
     def load(self):
         """Load a program into memory."""
@@ -31,7 +44,7 @@ class CPU:
             address += 1
 
 
-    def alu(self, op, reg_a, reg_b):
+    def alu(self, op: str, reg_a: int, reg_b: int):
         """ALU operations."""
 
         if op == "ADD":
@@ -62,4 +75,37 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        pass
+
+        # sets up vars for simple op codes
+        LDI = 0b10000010
+        PRN = 0b01000111
+        HLT = 0b00000001
+
+        # loads the program into memory
+        self.load()
+
+        # read ram
+        read_ram = self.ram_read
+
+        while True:
+            
+            pc = self.pc
+
+            # queues operation too start at default
+            # default is 0
+            op = read_ram(pc)
+
+            if op == LDI:
+                self.reg[read_ram(pc + 1)] = read_ram(pc + 2)
+                self.pc += 3
+            elif op == PRN:
+                print(self.reg[read_ram(pc + 1)])
+                self.pc += 2
+            elif op == HLT:
+                sys.exit(1)
+            else:
+                print("ERR: UNKNOWN COMMAND:\t", op)
+
+# runs program
+cpu = CPU()
+cpu.run()
