@@ -22,13 +22,13 @@ class CPU:
     def write_ram(self, addr: int, value):
         self.ram[addr] = value
 
-    def load(self):
+    def load(self, file_name):
         """Load a program into memory."""
 
         address = 0
 
         # For now, we've just hardcoded a program:
-
+        """
         program = [
             # From print8.ls8
             0b10000010, # LDI R0,8
@@ -42,14 +42,44 @@ class CPU:
         for instruction in program:
             self.ram[address] = instruction
             address += 1
+        """
 
+        try:
+            address = 0
+
+            # open file
+            with open(file_name) as f:
+                for line in f:
+                    # strips out white space and
+                    # splits at an inline comment
+                    cleaned_line = line.strip().split("#")
+
+                    # grabs the string number
+                    value = cleaned_line[0].strip()
+
+                    # checks if value is blank or not
+                    # if so, skip to the next line
+                    if value != "":
+                        # convert number string to type int
+                        # converts binary string to binary int
+                        num = int(value, 2)
+                        self.ram[address] = num
+                        address += 1
+                    else:
+                        continue
+        except FileNotFoundError:
+            print("ERR: FILE NOT FOUND")
+            sys.exit(2)
 
     def alu(self, op: str, reg_a: int, reg_b: int):
         """ALU operations."""
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
-        #elif op == "SUB": etc
+        elif op == "SUB":
+            self.reg[reg_a] -= self.reg[reg_b]
+        elif op == "MUL":
+            self.reg[reg_a] *= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -80,13 +110,12 @@ class CPU:
         LDI = 0b10000010
         PRN = 0b01000111
         HLT = 0b00000001
-
-        # loads the program into memory
-        self.load()
+        MUL = 0b10100010
 
         # read ram
         read_ram = self.ram_read
 
+        # run the program
         while True:
             
             pc = self.pc
@@ -101,11 +130,23 @@ class CPU:
             elif op == PRN:
                 print(self.reg[read_ram(pc + 1)])
                 self.pc += 2
+            elif op == MUL:
+                # grab the ram values that hold the register indices
+                reg_a = read_ram(pc + 1)
+                reg_b = read_ram(pc + 2)
+                # call on the ALU
+                self.alu("MUL", reg_a, reg_b)
+                # move program counter
+                self.pc += 3
             elif op == HLT:
                 sys.exit(1)
             else:
                 print("ERR: UNKNOWN COMMAND:\t", op)
 
-# runs program
-cpu = CPU()
-cpu.run()
+#else:
+    # err message
+#    print("""
+#        ERR: PLEASE PROVIDE A FILE YOU WISH TO RUN\n
+#        e.g. python cpu.py examples/FILE_NAME
+#    """)
+#    sys.exit(2)
