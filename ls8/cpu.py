@@ -120,7 +120,7 @@ class CPU:
             
             pc = self.pc
 
-            # queues operation too start at default
+            # queues operation to start at default
             # default is 0
             op = read_ram(pc)
 
@@ -142,11 +142,3 @@ class CPU:
                 sys.exit(1)
             else:
                 print("ERR: UNKNOWN COMMAND:\t", op)
-
-#else:
-    # err message
-#    print("""
-#        ERR: PLEASE PROVIDE A FILE YOU WISH TO RUN\n
-#        e.g. python cpu.py examples/FILE_NAME
-#    """)
-#    sys.exit(2)
