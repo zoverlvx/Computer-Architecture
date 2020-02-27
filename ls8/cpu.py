@@ -2,6 +2,15 @@
 
 import sys
 
+# setup constants for op codes
+LDI = 0b10000010
+PRN = 0b01000111
+HLT = 0b00000001
+MUL = 0b10100010
+POP = 0b01000110
+PUSH = 0b01000101
+SP = 7 # stack pointer R7
+
 class CPU:
     """Main CPU class."""
 
@@ -80,6 +89,8 @@ class CPU:
             self.reg[reg_a] -= self.reg[reg_b]
         elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]
+        elif op == "DIV":
+            self.reg[reg_a] /= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -103,17 +114,17 @@ class CPU:
 
         print()
 
-    def run(self):
+    def run(self, file_name):
         """Run the CPU."""
 
-        # sets up vars for simple op codes
-        LDI = 0b10000010
-        PRN = 0b01000111
-        HLT = 0b00000001
-        MUL = 0b10100010
+        # load the program into memory
+        self.load(file_name)
 
         # read ram
         read_ram = self.ram_read
+
+        # write ram
+        write_ram = self.write_ram
 
         # run the program
         while True:
@@ -138,7 +149,53 @@ class CPU:
                 self.alu("MUL", reg_a, reg_b)
                 # move program counter
                 self.pc += 3
+            elif op == PUSH:
+                
+                # decrement SP
+                self.reg[SP] -= 1
+
+                # get current mem address SP points to
+                stack_addr = self.reg[SP]
+
+                # grabs a reg number from the instruction
+                reg_num = read_ram(pc + 1)
+
+                # get the value out of the register
+                val = self.reg[reg_num]
+
+                # write the reg value to a position in the stack
+                write_ram(stack_addr, val)
+                self.pc += 2
+            elif op == POP:
+                # get the value out of memory
+                stack_val = read_ram(self.reg[SP])
+
+                # get the register number from the instruction in memory
+                reg_num = read_ram(pc + 1)
+
+                # set the value of a register to the value in the stack
+                self.reg[reg_num] = stack_val
+
+                # increment the SP
+                self.reg[SP] += 1
+                self.pc += 2
             elif op == HLT:
                 sys.exit(1)
             else:
                 print("ERR: UNKNOWN COMMAND:\t", op)
+
+if len(sys.argv) == 2:
+    file_name = sys.argv[1]
+
+    cpu = CPU()
+
+    # set the mem address the stack pointer is looking at
+
+    cpu.reg[SP] = 0xf4
+    cpu.run(file_name)
+else:
+    print("""
+        ERR: PLEASE PROVIDE A FILE THAT YOU WISH TO RUN\n
+        e.g. python cpu.py examples/FILE_NAME
+    """)
+    sys.exit(2)
